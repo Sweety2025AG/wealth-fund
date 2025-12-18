@@ -4,174 +4,190 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wealth Fund | Secure Access</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css"/>
     <style>
-        :root { --bg-dark: #000000; --ash: #1a1a1a; --panel: #2c2c2c; --accent: #00d2ff; --success: #00ff88; --error: #ff4d4d; }
+        :root { --bg-dark: #000; --ash: #1a1a1a; --accent: #00d2ff; --success: #00ff88; --error: #ff4d4d; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-dark); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: var(--panel); padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 0 30px rgba(0,210,255,0.15); border: 1px solid #333; }
-        .brand h1 { font-size: 32px; text-align: center; margin: 0; color: white; font-weight: 800; }
-        .brand p { text-align: center; color: var(--accent); font-size: 10px; letter-spacing: 4px; margin-bottom: 25px; }
+        .container { background: #111; padding: 30px; border-radius: 20px; width: 100%; max-width: 380px; border: 1px solid #333; box-shadow: 0 0 40px rgba(0,210,255,0.1); position: relative; }
         
-        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; background: #000; color: white; box-sizing: border-box; outline: none; }
-        .red-mark { border: 2px solid var(--error) !important; }
-        .green-mark { border: 2px solid var(--success) !important; }
+        .brand h1 { font-size: 28px; text-align: center; margin: 0; letter-spacing: 2px; }
+        .brand p { text-align: center; color: var(--accent); font-size: 9px; letter-spacing: 4px; margin-bottom: 25px; }
 
-        .checklist { font-size: 11px; margin: 10px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; background: #222; padding: 10px; border-radius: 8px; }
-        .check-item { color: #555; transition: 0.3s; }
-        .check-item.valid { color: var(--success); font-weight: bold; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #333; background: #000; color: white; box-sizing: border-box; outline: none; transition: 0.3s; }
+        /* Error Highlighting */
+        .field-error { border: 1px solid var(--error) !important; background: #200 !important; }
+        .valid { border-color: var(--success) !important; }
 
-        button { width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; text-transform: uppercase; }
+        #sms-notif { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 350px; background: #fff; color: #000; padding: 15px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1000; transition: 0.5s; display: flex; align-items: center; gap: 10px; border: 1px solid #ccc; }
+        #sms-notif.show { top: 20px; }
+
+        button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; text-transform: uppercase; }
         .btn-main { background: var(--accent); color: black; }
-        .btn-otp { background: #25D366; color: white; font-size: 11px; flex: 1; }
+        .btn-otp { background: #333; color: white; font-size: 10px; flex: 1; border: 1px solid #444; }
+        .btn-whatsapp { background: #25D366; }
+
+        .pass-box { position: relative; }
+        .eye { position: absolute; right: 12px; top: 22px; cursor: pointer; color: var(--accent); font-size: 9px; font-weight: bold; }
         
-        .profile-btn { position: fixed; top: 20px; right: 20px; background: var(--accent); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; cursor: pointer; font-weight: bold; font-size: 20px; box-shadow: 0 0 15px var(--accent); }
         .hidden { display: none; }
-        .iti { width: 100%; } /* Fix for country picker width */
+        .links { text-align: center; font-size: 12px; margin-top: 20px; }
+        .links a { color: var(--accent); text-decoration: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="welcome-page" class="hidden" style="text-align:center;">
-    <div class="profile-btn" onclick="document.getElementById('details').classList.toggle('hidden')">👤</div>
-    <h1 style="font-size: 3rem;">Welcome to <br><span style="color:var(--accent)">Wealth Fund</span></h1>
-    <div id="details" class="hidden container" style="margin: 20px auto; text-align:left;">
-        <h3 style="border-bottom: 1px solid var(--accent); padding-bottom: 5px;">Personal Details</h3>
-        <p><strong>Name:</strong> <span id="p-name"></span></p>
-        <p><strong>Phone:</strong> <span id="p-phone"></span></p>
-        <p><strong>Emp ID:</strong> <span id="p-id"></span></p>
-    </div>
+<div id="sms-notif">
+    <div style="font-size: 24px;">💬</div>
+    <div><strong id="notif-title">Message</strong><br><span id="notif-body">OTP: 4492</span></div>
 </div>
 
-<div class="container" id="auth-box">
+<div class="container" id="app-container">
     <div class="brand"><h1>Wealth Fund</h1><p>PREMIER MANAGEMENT</p></div>
 
-    <div id="login-view">
-        <input type="tel" id="l-phone" placeholder="Phone Number">
-        <input type="password" id="l-pass" placeholder="Password">
-        <button class="btn-main" onclick="login()">LOGIN</button>
-        <p style="text-align:center; font-size:12px; margin-top: 20px;">
-            <a href="#" style="color:var(--accent)">Forgot Password?</a> | 
-            <a href="#" onclick="switchView('reg')" style="color:var(--accent)">Register</a>
-        </p>
+    <div id="login-page">
+        <input type="tel" id="login-phone" placeholder="Phone Number">
+        <div class="pass-box">
+            <input type="password" id="login-pass" placeholder="Password">
+            <span class="eye" onclick="togglePass('login-pass')">VIEW</span>
+        </div>
+        <button class="btn-main" id="login-btn" onclick="processLogin()">Login</button>
+        <div class="links">
+            Don't have an account? <a onclick="showView('register')">Register</a>
+        </div>
     </div>
 
-    <div id="reg-view" class="hidden">
-        <input type="text" id="fname" placeholder="First Name">
-        <input type="text" id="lname" placeholder="Last Name">
-        <input type="tel" id="r-phone" oninput="checkPhone(this)">
+    <div id="register-page" class="hidden">
+        <input type="text" id="fname" class="reg-field" placeholder="First Name *">
+        <input type="text" id="lname" class="reg-field" placeholder="Last Name *">
+        <input type="tel" id="r-phone" class="reg-field" placeholder="Phone (10 Digits) *">
         
-        <div style="display:flex; gap:10px; margin: 10px 0;">
-            <button class="btn-otp" onclick="sendOTP('WhatsApp')">WhatsApp OTP</button>
-            <button class="btn-otp" style="background:#444" onclick="sendOTP('SMS')">SMS OTP</button>
+        <div style="display:flex; gap:8px;">
+            <button class="btn-otp" onclick="sendFakeOTP('SMS')">SMS OTP</button>
+            <button class="btn-otp btn-whatsapp" onclick="sendFakeOTP('WhatsApp')">WhatsApp OTP</button>
         </div>
-        <input type="text" id="otp-in" placeholder="Enter OTP">
+        <input type="text" id="otp-in" class="reg-field" placeholder="Enter OTP *">
 
-        <div style="position:relative">
-            <input type="password" id="r-pass" placeholder="Password" oninput="checkPass(this)">
-            <span style="position:absolute; right:10px; top:20px; font-size:9px; cursor:pointer; color:var(--accent)" onclick="toggleView()">SHOW</span>
-        </div>
-
-        <div class="checklist">
-            <span id="c09" class="check-item">● Numbers (0-9)</span>
-            <span id="caz" class="check-item">● Lowercase (a-z)</span>
-            <span id="cAZ" class="check-item">● Uppercase (A-Z)</span>
-            <span id="csym" class="check-item">● Symbols (!@#)</span>
+        <div class="pass-box">
+            <input type="password" id="r-pass" class="reg-field" placeholder="Create Password *">
+            <span class="eye" onclick="togglePass('r-pass')">VIEW</span>
         </div>
 
-        <input type="text" id="empid" placeholder="Employee ID">
-        <input type="text" placeholder="Referral Code">
-        <button class="btn-main" onclick="register()">COMPLETE REGISTRATION</button>
-        <button onclick="switchView('login')" style="background:transparent; color:white; font-size:11px; margin-top: 5px;">Back to Login</button>
+        <input type="text" id="empid" class="reg-field" placeholder="Employee ID *">
+        <input type="text" id="refcode" class="reg-field" placeholder="Referral Code *">
+        
+        <button class="btn-main" id="reg-btn" onclick="processRegistration()">Complete Register</button>
+        <div class="links"><a onclick="showView('login')">Back to Login</a></div>
+    </div>
+
+    <div id="dashboard-page" class="hidden" style="text-align: center;">
+        <h2 style="margin-top: 20px;">Welcome, <span id="display-name" style="color:var(--accent)">User</span></h2>
+        <div style="background: #222; padding: 15px; border-radius: 10px; margin-top: 20px; text-align: left; font-size: 14px;">
+            <p><strong>Status:</strong> Active Member ✅</p>
+            <p><strong>Employee ID:</strong> <span id="display-id"></span></p>
+            <p><strong>Account Type:</strong> Wealth Premier</p>
+        </div>
+        <button class="btn-main" style="margin-top: 30px;" onclick="location.reload()">Secure Logout</button>
     </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
 <script>
-    // Initialize Phone Input with India as default
-    const phoneInput = document.querySelector("#r-phone");
-    const iti = window.intlTelInput(phoneInput, {
-        initialCountry: "in",
-        separateDialCode: true,
-        utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
-    });
-
     const dbUrl = 'https://api.sheetbest.com/sheets/98cdebcb-b77d-4c83-b622-7ab89fc1c460';
 
-    function switchView(v) {
-        document.getElementById('login-view').classList.toggle('hidden', v === 'reg');
-        document.getElementById('reg-view').classList.toggle('hidden', v === 'login');
+    function showView(view) {
+        document.getElementById('login-page').classList.toggle('hidden', view !== 'login');
+        document.getElementById('register-page').classList.toggle('hidden', view !== 'register');
+        document.getElementById('dashboard-page').classList.toggle('hidden', view !== 'dashboard');
     }
 
-    function checkPhone(el) {
-        // Validates based on international standards for selected country
-        el.className = (iti.isValidNumber()) ? 'green-mark' : 'red-mark';
+    function togglePass(id) {
+        const input = document.getElementById(id);
+        input.type = input.type === "password" ? "text" : "password";
     }
 
-    function checkPass(el) {
-        const v = el.value;
-        document.getElementById('c09').className = /[0-9]/.test(v) ? 'check-item valid' : 'check-item';
-        document.getElementById('caz').className = /[a-z]/.test(v) ? 'check-item valid' : 'check-item';
-        document.getElementById('cAZ').className = /[A-Z]/.test(v) ? 'check-item valid' : 'check-item';
-        document.getElementById('csym').className = /[^A-Za-z0-9]/.test(v) ? 'check-item valid' : 'check-item';
-        // Green if more than 8 chars and contains a number
-        el.className = (v.length > 8 && /[0-9]/.test(v)) ? 'green-mark' : 'red-mark';
+    function sendFakeOTP(type) {
+        const ph = document.getElementById('r-phone').value;
+        if(ph.length < 10) { alert("Enter 10-digit phone first"); return; }
+        const notif = document.getElementById('sms-notif');
+        document.getElementById('notif-title').innerText = type + " Alert";
+        document.getElementById('notif-body').innerText = `Wealth Fund OTP: ${Math.floor(1000 + Math.random() * 9000)}`;
+        notif.classList.add('show');
+        setTimeout(() => notif.classList.remove('show'), 5000);
     }
 
-    function toggleView() {
-        let x = document.getElementById("r-pass");
-        x.type = x.type === "password" ? "text" : "password";
-    }
+    async function processRegistration() {
+        const fields = document.querySelectorAll('.reg-field');
+        let hasEmpty = false;
 
-    function sendOTP(m) {
-        if(!iti.isValidNumber()) return alert("Enter a valid phone number first");
-        const ph = iti.getNumber();
-        alert(`OTP sent to ${ph} via ${m}`);
-        if(m === 'WhatsApp') {
-            window.open(`https://wa.me/${ph.replace('+','')}/?text=Your%20Wealth%20Fund%20OTP%20is%201234`);
+        // 1. CLEAR PREVIOUS ERRORS & CHECK EMPTY
+        fields.forEach(f => {
+            f.classList.remove('field-error');
+            if(f.value.trim() === "") {
+                f.classList.add('field-error');
+                hasEmpty = true;
+            }
+        });
+
+        if(hasEmpty) {
+            alert("STOP: All marked fields (*) are mandatory.");
+            return; // EXIT FUNCTION HERE
         }
-    }
 
-    async function register() {
-        const data = {
+        // 2. PREPARE DATA
+        const btn = document.getElementById('reg-btn');
+        const userData = {
             fname: document.getElementById('fname').value,
             lname: document.getElementById('lname').value,
-            phone: iti.getNumber(),
+            phone: document.getElementById('r-phone').value,
             pass: document.getElementById('r-pass').value,
-            empid: document.getElementById('empid').value
+            empid: document.getElementById('empid').value,
+            refcode: document.getElementById('refcode').value
         };
+
+        btn.innerText = "Saving to Drive...";
+        btn.disabled = true;
 
         try {
             await fetch(dbUrl, {
                 method: "POST",
-                mode: "cors",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
+                body: JSON.stringify([userData]),
             });
-            alert("Registration Successful! Redirecting to login...");
-            switchView('login');
+            alert("Registration Complete! Welcome to the team.");
+            showView('login');
         } catch (e) {
-            alert("Error saving to Drive. Check your Sheet.best URL.");
+            alert("Connection Error. Try again.");
+        } finally {
+            btn.innerText = "Complete Register";
+            btn.disabled = false;
         }
     }
 
-    async function login() {
-        const inputPhone = document.getElementById('l-phone').value;
-        const inputPass = document.getElementById('l-pass').value;
+    async function processLogin() {
+        const ph = document.getElementById('login-phone').value;
+        const ps = document.getElementById('login-pass').value;
+        const btn = document.getElementById('login-btn');
 
-        // Fetch all users from Google Sheets to verify
-        const response = await fetch(dbUrl);
-        const users = await response.json();
+        if(!ph || !ps) { alert("Please enter login details."); return; }
 
-        const user = users.find(u => (u.phone.includes(inputPhone)) && u.pass === inputPass);
+        btn.innerText = "Authenticating...";
+        btn.disabled = true;
 
-        if(user) {
-            document.getElementById('auth-box').classList.add('hidden');
-            document.getElementById('welcome-page').classList.remove('hidden');
-            document.getElementById('p-name').innerText = user.fname + " " + user.lname;
-            document.getElementById('p-phone').innerText = user.phone;
-            document.getElementById('p-id').innerText = user.empid;
-        } else {
-            alert("Invalid credentials or user not found.");
+        try {
+            const res = await fetch(dbUrl);
+            const users = await res.json();
+            const found = users.find(u => u.phone.includes(ph) && u.pass === ps);
+
+            if(found) {
+                document.getElementById('display-name').innerText = found.fname;
+                document.getElementById('display-id').innerText = found.empid;
+                showView('dashboard');
+            } else {
+                alert("Credentials not found. Please register.");
+            }
+        } catch (e) {
+            alert("Server Busy. Try again.");
+        } finally {
+            btn.innerText = "Login";
+            btn.disabled = false;
         }
     }
 </script>
